@@ -1,5 +1,19 @@
 # Booking System
 
+## Bookwise frontend 2.0
+
+The project now includes a responsive Bookwise 2.0 frontend served by the same Express application. It uses the existing API and supports authentication, appointment management, calendar view, payments, feedback, and profile settings.
+
+### Run locally
+
+```bash
+npm install
+copy .env.example .env
+npm start
+```
+
+Open `http://localhost:3000`. MongoDB must be running locally, or `MONGO_URI` can point to an accessible MongoDB instance.
+
 Ky është një projekt për menaxhimin e rezervimeve, i ndarë në module të ndryshme si: models, controllers, services, dhe routes.
 
 ## Struktura e projektit

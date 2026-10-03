@@ -2,12 +2,20 @@ const userService = require("../services/user.services");
 
 const register = async (req, res) =>{
     try{
+        console.log("Register request received");
         const { fullName, age, email, password, location, Image} = req.body;
         const user = await userService.register( fullName, age, email, password, location, Image);
-        res.status(201).json(user);
+        console.log("Register save complete");
+        const safeUser = user.toObject();
+        delete safeUser.password;
+        res.status(201).json(safeUser);
     }
     catch(err){
-        res.status(400).json({message:"Useri nuk u regjistrua"});
+        if (err.code === "USER_EXISTS" || err.code === 11000) {
+            return res.status(409).json({message:"Ky email është tashmë i regjistruar"});
+        }
+        console.error("Register error:", err);
+        res.status(500).json({message:"Useri nuk u regjistrua"});
     }
 }
 

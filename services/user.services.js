@@ -8,25 +8,25 @@ const generateToken = (userId) => {
     return token;
 };
 const register = async (fullName, age, email, password, location, Image) => {
-    try {
-        const userRegister = await User.findOne({ email: email });
-        if (userRegister) {
-            throw new Error("This User Is Registered");
-        }
-        const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT);
-        const newUser = new User({
-            fullName: fullName,
-            age: age,
-            email: email,
-            password: hashedPassword,
-            location: location,
-            Image: Image
-        });
-        await newUser.save();
-        return newUser;
-    } catch (err) {
-        return { msg: err.message, err };
+    console.log("Register lookup:", email);
+    const userRegister = await User.findOne({ email: email });
+    console.log("Register lookup complete:", Boolean(userRegister));
+    if (userRegister) {
+        const error = new Error("This User Is Registered");
+        error.code = "USER_EXISTS";
+        throw error;
     }
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT);
+    const newUser = new User({
+        fullName: fullName,
+        age: age,
+        email: email,
+        password: hashedPassword,
+        location: location,
+        Image: Image
+    });
+    await newUser.save();
+    return newUser;
 };
 
 const findUser = async (userId) => {
