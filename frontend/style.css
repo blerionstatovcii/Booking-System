@@ -319,6 +319,21 @@ a { color: inherit; text-decoration: none; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 20px 22px; border-bottom: 1px solid var(--line); }
 .modal-header h2 { margin: 0; font: 700 17px 'Space Grotesk', sans-serif; letter-spacing: -.03em; }
 .modal-body { padding: 22px; }
+.credentials-modal .auth-form-icon { margin-bottom: 14px; }
+.modal-lead { margin: 0 0 18px; color: #687488; font-size: 12px; line-height: 1.65; }
+.credentials-list { display: grid; gap: 9px; }
+.credential-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 11px; background: #f8fafb; }
+.credential-row span { color: #7d8799; font-size: 11px; }
+.credential-row strong { min-width: 0; overflow-wrap: anywhere; color: var(--ink); font-size: 12px; text-align: right; }
+.credentials-continue { width: 100%; margin-top: 19px; }
+.login-modal .auth-form-icon { margin-bottom: 14px; }
+.login-modal .auth-form-fields { margin-top: 20px; }
+.login-modal .auth-bottom { margin-top: 20px; }
+.register-modal .auth-form-icon, .appointment-auth-modal .auth-form-icon { margin-bottom: 14px; }
+.register-modal .auth-form-fields { margin-top: 20px; }
+.register-modal .auth-bottom { margin-top: 20px; }
+.modal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.modal-actions .button { flex: 1 1 150px; }
 .toast-region { position: fixed; right: 22px; bottom: 22px; z-index: 200; display: grid; gap: 10px; }
 .toast { display: flex; align-items: center; gap: 10px; min-width: 250px; max-width: 360px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; color: #526075; background: #fff; box-shadow: var(--shadow-strong); font-size: 11px; animation: toast-in .2s ease; }
 .toast.success { border-color: #cdeee3; }

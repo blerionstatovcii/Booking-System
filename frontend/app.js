@@ -22,6 +22,13 @@
     month: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     authError: '',
     authSuccess: '',
+    loginModalOpen: false,
+    loginReturnTo: '',
+    registerModalOpen: false,
+    registerReturnTo: '',
+    appointmentAuthPromptOpen: false,
+    appointmentReturnTo: '#appointments/new',
+    registrationCredentials: null,
     formError: '',
     settingsMessage: '',
     settingsError: ''
@@ -151,7 +158,7 @@
   };
 
   function route() {
-    var value = (location.hash || '').replace(/^#/, '') || (token ? 'dashboard' : 'login');
+    var value = (location.hash || '').replace(/^#/, '') || (token ? 'dashboard' : 'home');
     var parts = value.split('/');
     return { value: value, page: parts[0], id: parts[1] || '', action: parts[2] || '' };
   }
@@ -203,7 +210,7 @@
 
   function field(label, name, type, value, placeholder, required, extra) {
     extra = extra || {};
-    return '<label class="form-group' + (extra.full ? ' full' : '') + '"><span class="form-label">' + escapeHtml(label) + '</span><input class="field" name="' + escapeHtml(name) + '" type="' + (type || 'text') + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '"' + (required ? ' required' : '') + (extra.min !== undefined ? ' min="' + extra.min + '"' : '') + (extra.step ? ' step="' + extra.step + '"' : '') + (extra.accept ? ' accept="' + extra.accept + '"' : '') + '></label>';
+    return '<label class="form-group' + (extra.full ? ' full' : '') + '"><span class="form-label">' + escapeHtml(label) + '</span><input class="field" name="' + escapeHtml(name) + '" type="' + (type || 'text') + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(placeholder || '') + '"' + (required ? ' required' : '') + (extra.min !== undefined ? ' min="' + extra.min + '"' : '') + (extra.step ? ' step="' + extra.step + '"' : '') + (extra.accept ? ' accept="' + extra.accept + '"' : '') + (extra.disabled ? ' disabled' : '') + '></label>';
   }
 
   function selectField(label, name, value, options) {
@@ -215,19 +222,45 @@
   function emptyState(iconName, title, description, action) { return '<div class="empty-state"><span class="empty-icon">' + icon(iconName, 20) + '</span><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(description) + '</p>' + (action ? action : '') + '</div>'; }
   function errorState(message) { return '<div class="error-state"><span class="error-icon">' + icon('alert', 20) + '</span><h3>Something went wrong</h3><p>' + escapeHtml(message) + '</p>' + button('Try again', 'button', 'retry') + '</div>'; }
 
+  function displayUser() { return state.user || { fullName: 'Guest user', email: 'Sign in to save appointments' }; }
+
   function sidebar(active) {
+    var user = displayUser();
     var items = [
       ['dashboard', 'Overview', 'grid'],
       ['appointments', 'Appointments', 'clipboard'],
       ['calendar', 'Calendar', 'calendar'],
       ['settings', 'Account settings', 'settings']
     ];
-    return '<aside class="sidebar" id="sidebar"><div class="brand"><span class="brand-mark">' + icon('sparkles', 17) + '</span><span>Bookwise</span><button class="icon-button sidebar-close" data-action="close-menu" aria-label="Close navigation">' + icon('close', 17) + '</button></div><div class="nav-wrap"><p class="nav-label">Workspace</p><nav>' + items.map(function (item) { return '<a class="nav-link' + (active === item[0] ? ' active' : '') + '" href="#' + item[0] + '" data-route="' + item[0] + '">' + icon(item[2], 17) + '<span>' + item[1] + '</span></a>'; }).join('') + '</nav></div><div class="sidebar-profile"><div class="profile-chip">' + avatar(state.user) + '<div class="profile-meta"><p class="profile-name">' + escapeHtml(state.user && state.user.fullName || 'Your account') + '</p><p class="profile-email">' + escapeHtml(state.user && state.user.email || '') + '</p></div><button class="icon-button" data-action="logout" aria-label="Log out">' + icon('logout', 15) + '</button></div></div></aside>';
+    var accountAction = token ? '<button class="icon-button" data-action="logout" aria-label="Log out">' + icon('logout', 15) + '</button>' : '<a class="icon-button" href="#login" aria-label="Sign in">' + icon('arrow', 15) + '</a>';
+    return '<aside class="sidebar" id="sidebar"><div class="brand"><span class="brand-mark">' + icon('sparkles', 17) + '</span><span>Bookwise</span><button class="icon-button sidebar-close" data-action="close-menu" aria-label="Close navigation">' + icon('close', 17) + '</button></div><div class="nav-wrap"><p class="nav-label">Workspace</p><nav>' + items.map(function (item) { return '<a class="nav-link' + (active === item[0] ? ' active' : '') + '" href="#' + item[0] + '" data-route="' + item[0] + '">' + icon(item[2], 17) + '<span>' + item[1] + '</span></a>'; }).join('') + '</nav></div><div class="sidebar-profile"><div class="profile-chip">' + avatar(user) + '<div class="profile-meta"><p class="profile-name">' + escapeHtml(user.fullName) + '</p><p class="profile-email">' + escapeHtml(user.email) + '</p></div>' + accountAction + '</div></div></aside>';
   }
 
   function appShell(active, content) {
+    var user = displayUser();
     var title = active === 'appointments' ? 'Appointments' : active === 'calendar' ? 'Calendar' : active === 'settings' ? 'Account settings' : 'Overview';
-    return '<div class="app-shell"><div class="sidebar-overlay" data-action="close-menu"></div>' + sidebar(active) + '<div class="main-wrap"><header class="topbar"><div class="topbar-left"><button class="icon-button menu-toggle" data-action="open-menu" aria-label="Open navigation">' + icon('menu', 19) + '</button><div><p class="topbar-kicker">Workspace</p><h1 class="topbar-title">' + title + '</h1></div></div><div class="topbar-right"><div class="topbar-user"><strong>' + escapeHtml(state.user && state.user.fullName || '') + '</strong><span>Personal workspace</span></div>' + avatar(state.user) + '</div></header><main class="page">' + content + '</main></div></div>';
+    return '<div class="app-shell"><div class="sidebar-overlay" data-action="close-menu"></div>' + sidebar(active) + '<div class="main-wrap"><header class="topbar"><div class="topbar-left"><button class="icon-button menu-toggle" data-action="open-menu" aria-label="Open navigation">' + icon('menu', 19) + '</button><div><p class="topbar-kicker">Workspace</p><h1 class="topbar-title">' + title + '</h1></div></div><div class="topbar-right"><div class="topbar-user"><strong>' + escapeHtml(user.fullName) + '</strong><span>Personal workspace</span></div>' + avatar(user) + '</div></header><main class="page">' + content + '</main></div></div>' + loginModal() + registerModal() + appointmentAuthPrompt() + registrationCredentialsModal();
+  }
+
+  function loginModal() {
+    if (!state.loginModalOpen) return '';
+    return '<div class="modal-backdrop" role="presentation"><section class="modal login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title"><div class="modal-header"><h2 id="login-modal-title">Sign in</h2><button class="icon-button" data-action="close-login-modal" aria-label="Close">' + icon('close', 17) + '</button></div><div class="modal-body"><span class="auth-form-icon">' + icon('shield', 20) + '</span><p class="modal-lead">Sign in to open your appointments and workspace.</p><form id="login-modal-form" class="auth-form-fields"><label class="form-group"><span class="form-label">Email address</span><input class="field" name="email" type="email" autocomplete="email" placeholder="you@company.com" required></label><label class="form-group"><span class="form-label">Password</span><div class="password-wrap"><input class="field" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Show password">' + icon('eye', 15) + '</button></div></label>' + (state.authError ? '<p class="error-message">' + icon('alert', 14) + escapeHtml(state.authError) + '</p>' : '') + '<button class="button button-primary auth-submit" type="submit">' + icon('arrow', 15) + ' Sign in</button></form><p class="auth-bottom">New to Bookwise? <a class="auth-link" href="#register">Create an account</a></p></div></section></div>';
+  }
+
+  function registerModal() {
+    if (!state.registerModalOpen) return '';
+    return '<div class="modal-backdrop" role="presentation"><section class="modal register-modal" role="dialog" aria-modal="true" aria-labelledby="register-modal-title"><div class="modal-header"><h2 id="register-modal-title">Create account</h2><button class="icon-button" data-action="close-register-modal" aria-label="Close">' + icon('close', 17) + '</button></div><div class="modal-body"><span class="auth-form-icon">' + icon('user', 20) + '</span><p class="modal-lead">Create your account and start managing your appointments.</p><form id="register-modal-form" class="auth-form-fields"><label class="form-group"><span class="form-label">Full name</span><input class="field" name="fullName" placeholder="Alex Morgan" required></label><div class="form-grid"><label class="form-group"><span class="form-label">Age</span><input class="field" name="age" type="number" min="0" placeholder="28" required></label><label class="form-group"><span class="form-label">Location</span><input class="field" name="location" placeholder="Beirut"></label></div><label class="form-group"><span class="form-label">Email address</span><input class="field" name="email" type="email" autocomplete="email" placeholder="you@company.com" required></label><label class="form-group"><span class="form-label">Password</span><input class="field" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="At least 6 characters" required></label>' + (state.authError ? '<p class="error-message">' + icon('alert', 14) + escapeHtml(state.authError) + '</p>' : '') + '<button class="button button-primary auth-submit" type="submit">' + icon('arrow', 15) + ' Create account</button></form><p class="auth-bottom">Already have an account? <a class="auth-link" href="#login">Sign in</a></p></div></section></div>';
+  }
+
+  function appointmentAuthPrompt() {
+    if (!state.appointmentAuthPromptOpen) return '';
+    return '<div class="modal-backdrop" role="presentation"><section class="modal appointment-auth-modal" role="dialog" aria-modal="true" aria-labelledby="appointment-auth-title"><div class="modal-header"><h2 id="appointment-auth-title">You must login first</h2><button class="icon-button" data-action="close-appointment-prompt" aria-label="Close">' + icon('close', 17) + '</button></div><div class="modal-body"><span class="auth-form-icon">' + icon('shield', 20) + '</span><p class="modal-lead">Please login or create an account before creating an appointment.</p><div class="modal-actions"><button class="button button-primary" data-action="open-login-from-prompt">Login</button><button class="button button-secondary" data-action="open-register-from-prompt">Create account</button></div></div></section></div>';
+  }
+
+  function registrationCredentialsModal() {
+    var credentials = state.registrationCredentials;
+    if (!credentials) return '';
+    return '<div class="modal-backdrop" role="presentation"><section class="modal credentials-modal" role="dialog" aria-modal="true" aria-labelledby="registration-success-title"><div class="modal-header"><h2 id="registration-success-title">Account created</h2><button class="icon-button" data-action="close-registration-modal" aria-label="Close">' + icon('close', 17) + '</button></div><div class="modal-body"><span class="auth-form-icon">' + icon('checkCircle', 20) + '</span><p class="modal-lead">You are already signed in. Save these details if you need to log in again.</p><div class="credentials-list"><div class="credential-row"><span>Email</span><strong>' + escapeHtml(credentials.email) + '</strong></div><div class="credential-row"><span>Password</span><strong>' + escapeHtml(credentials.password) + '</strong></div></div><button class="button button-primary credentials-continue" data-action="close-registration-modal">Continue to workspace</button></div></section></div>';
   }
 
   async function ensureAppointments() {
@@ -334,6 +367,11 @@
     return '<div class="settings-page">' + pageHeader('Personal workspace', 'Account settings', 'Keep your profile details current across your Booking System account.') + '<div class="settings-layout"><section class="card profile-card">' + avatar(user, true) + '<div><h3>Profile</h3><p>Your identity and contact details.</p></div><p class="profile-card-note">Only fields supported by the existing user endpoint are shown here.</p></section><div class="settings-stack"><section class="card form-card"><div class="form-heading"><span class="form-heading-icon">' + icon('user', 18) + '</span><div><h3>Profile details</h3><p>These details are connected to your user record.</p></div></div><form id="settings-form"><div class="form-grid">' + field('Full name', 'fullName', 'text', user.fullName, '', true, { full: true }) + field('Email address', 'email', 'email', user.email, '', true) + field('Age', 'age', 'number', user.age, '', true, { min: 0 }) + field('Location', 'location', 'text', user.location, 'City or region', false, { full: true }) + field('Avatar URL', 'Image', 'url', user.Image, 'https://...', false, { full: true }) + '<p class="form-hint" style="grid-column:1/-1;margin-top:-10px">Optional. The backend stores this as the user image field.</p></div>' + (message ? '<p class="success-message" style="margin-top:18px">' + icon('check', 14) + escapeHtml(message) + '</p>' : '') + (error ? '<p class="error-message" style="margin-top:18px">' + icon('alert', 14) + escapeHtml(error) + '</p>' : '') + '<div class="form-actions"><button class="button button-primary" type="submit">' + icon('check', 15) + ' Save changes</button></div></form></section><section class="card security-note"><span class="security-note-icon">' + icon('shield', 17) + '</span><div><h3>Security note</h3><p>Password changes and notifications are not exposed by the current backend, so they are intentionally not presented as editable settings.</p></div></section></div></div></div>';
   }
 
+  function guestSettingsPage() {
+    var user = displayUser();
+    return '<div class="settings-page">' + pageHeader('Personal workspace', 'Account settings', 'Preview your account settings. Sign in to edit and save your details.') + '<div class="settings-layout"><section class="card profile-card">' + avatar(user, true) + '<div><h3>Guest profile</h3><p>Your account preview.</p></div><p class="profile-card-note">Sign in to connect this workspace to your account.</p></section><div class="settings-stack"><section class="card form-card"><div class="form-heading"><span class="form-heading-icon">' + icon('user', 18) + '</span><div><h3>Profile details</h3><p>These fields become editable after login.</p></div></div><div class="form-grid">' + field('Full name', 'fullName', 'text', user.fullName, '', false, { full: true, disabled: true }) + field('Email address', 'email', 'email', '', 'Sign in to view your email', false, { disabled: true }) + field('Age', 'age', 'number', '', '', false, { disabled: true }) + field('Location', 'location', 'text', '', 'Sign in to view your location', false, { full: true, disabled: true }) + '</div><div class="form-actions"><a class="button button-primary" href="#login">Sign in to edit</a></div></section><section class="card security-note"><span class="security-note-icon">' + icon('shield', 17) + '</span><div><h3>Security note</h3><p>Your profile and account data are available after signing in.</p></div></section></div></div></div>';
+  }
+
   function loadingPage(active) { return appShell(active, '<div class="page-header"><div><p class="eyebrow">Workspace</p><h2 class="page-title">Loading your workspace</h2></div></div><section class="card">' + loadingBlock() + '</section>'); }
 
   function renderProtected(r) {
@@ -359,12 +397,55 @@
   }
 
   function renderRegister() {
-    app.innerHTML = '<div class="auth-shell"><section class="auth-visual"><div class="auth-brand"><span class="brand-mark">' + icon('sparkles', 17) + '</span><span>Bookwise</span></div><div class="auth-copy"><p class="eyebrow">A better rhythm</p><h1>Your schedule deserves a little more clarity.</h1><p>Create your workspace and keep your appointments close, organized, and easy to act on.</p></div><p class="auth-footer">Already have an account? <a href="#login">Sign in</a></p></section><section class="auth-form-side"><div class="auth-form">' + authBrand() + '<a class="back-link" href="#login">' + icon('arrowLeft', 15) + ' Back to sign in</a><h2>Create your account</h2><p class="auth-form-intro">A few details and your workspace is ready.</p><form id="register-form" class="auth-form-fields"><label class="form-group"><span class="form-label">Full name</span><input class="field" name="fullName" placeholder="Alex Morgan" required></label><div class="form-grid"><label class="form-group"><span class="form-label">Age</span><input class="field" name="age" type="number" min="0" placeholder="28" required></label><label class="form-group"><span class="form-label">Location</span><input class="field" name="location" placeholder="Beirut"></label></div><label class="form-group"><span class="form-label">Email address</span><input class="field" name="email" type="email" placeholder="you@company.com" required></label><label class="form-group"><span class="form-label">Password</span><input class="field" name="password" type="password" minlength="6" placeholder="At least 6 characters" required></label>' + (state.authError ? '<p class="error-message">' + icon('alert', 14) + escapeHtml(state.authError) + '</p>' : '') + '<button class="button button-primary auth-submit" type="submit">' + icon('arrow', 15) + ' Create account</button></form><p class="auth-note">By creating an account, you’ll use the existing Booking System authentication service.</p></div></section></div>';
+    var registerReturn = route().id === 'appointments' && route().action === 'new';
+    var signInRoute = registerReturn ? '#login/appointments/new' : '#login';
+    app.innerHTML = '<div class="auth-shell"><section class="auth-visual"><div class="auth-brand"><span class="brand-mark">' + icon('sparkles', 17) + '</span><span>Bookwise</span></div><div class="auth-copy"><p class="eyebrow">A better rhythm</p><h1>Your schedule deserves a little more clarity.</h1><p>Create your workspace and keep your appointments close, organized, and easy to act on.</p></div><p class="auth-footer">Already have an account? <a href="' + signInRoute + '">Sign in</a></p></section><section class="auth-form-side"><div class="auth-form">' + authBrand() + '<a class="back-link" href="' + signInRoute + '">' + icon('arrowLeft', 15) + ' Back to sign in</a><h2>Create your account</h2><p class="auth-form-intro">A few details and your workspace is ready.</p><form id="register-form" class="auth-form-fields"><label class="form-group"><span class="form-label">Full name</span><input class="field" name="fullName" placeholder="Alex Morgan" required></label><div class="form-grid"><label class="form-group"><span class="form-label">Age</span><input class="field" name="age" type="number" min="0" placeholder="28" required></label><label class="form-group"><span class="form-label">Location</span><input class="field" name="location" placeholder="Beirut"></label></div><label class="form-group"><span class="form-label">Email address</span><input class="field" name="email" type="email" placeholder="you@company.com" required></label><label class="form-group"><span class="form-label">Password</span><input class="field" name="password" type="password" minlength="6" placeholder="At least 6 characters" required></label>' + (state.authError ? '<p class="error-message">' + icon('alert', 14) + escapeHtml(state.authError) + '</p>' : '') + '<button class="button button-primary auth-submit" type="submit">' + icon('arrow', 15) + ' Create account</button></form><p class="auth-note">By creating an account, you’ll use the existing Booking System authentication service.</p></div></section></div>';
+  }
+
+  function renderGuestRoute(r) {
+    var active = r.page === 'calendar' ? 'calendar' : r.page === 'settings' ? 'settings' : r.page === 'appointments' ? 'appointments' : 'dashboard';
+    var content = r.page === 'calendar' ? calendarPage() : r.page === 'settings' ? guestSettingsPage() : r.page === 'appointments' ? appointmentsPage() : dashboardPage();
+    app.innerHTML = appShell(active, content);
+  }
+
+  function renderGuestDashboard() { renderGuestRoute({ page: 'dashboard' }); }
+
+  function openLoginModal(returnTo) {
+    state.registerModalOpen = false;
+    state.appointmentAuthPromptOpen = false;
+    state.loginModalOpen = true;
+    state.loginReturnTo = returnTo || '#dashboard';
+    state.authError = '';
+    renderGuestRoute(route());
+  }
+
+  function openRegisterModal(returnTo) {
+    state.loginModalOpen = false;
+    state.appointmentAuthPromptOpen = false;
+    state.registerModalOpen = true;
+    state.registerReturnTo = returnTo || '#dashboard';
+    state.authError = '';
+    renderGuestRoute(route());
+  }
+
+  function openAppointmentAuthPrompt() {
+    state.loginModalOpen = false;
+    state.registerModalOpen = false;
+    state.appointmentAuthPromptOpen = true;
+    state.appointmentReturnTo = '#appointments/new';
+    state.authError = '';
+    renderGuestRoute(route());
   }
 
   function renderApp() {
     var r = route();
-    if (!token) { if (r.page === 'register') renderRegister(); else renderLogin(); return; }
+    if (!token) {
+      if (r.page === 'login') { renderLogin(); return; }
+      if (r.page === 'register') { renderRegister(); return; }
+      if (r.page === 'appointments' && r.id === 'new') { openAppointmentAuthPrompt(); return; }
+      renderGuestRoute(r);
+      return;
+    }
     if (r.page === 'login' || r.page === 'register') { location.hash = '#dashboard'; return; }
     renderProtected(r);
   }
@@ -378,13 +459,36 @@
 
   async function submitLogin(form) {
     var data = formDataObject(form); state.authError = ''; var submit = form.querySelector('[type="submit"]'); submit.classList.add('loading'); submit.disabled = true; submit.innerHTML = icon('loader', 15) + ' Signing in';
-    try { var response = await api.login({ email: data.email, password: data.password }); saveSession(response.accessToken, response.user); state.appointmentsLoaded = false; state.authSuccess = ''; location.hash = '#dashboard'; }
+    try {
+      var response = await api.login({ email: data.email, password: data.password });
+      var returnToBooking = route().page === 'login' && route().id === 'appointments' && route().action === 'new';
+      var returnTo = form.id === 'login-modal-form' ? (state.loginReturnTo || '#dashboard') : (returnToBooking ? '#appointments/new' : '#dashboard');
+      saveSession(response.accessToken, response.user);
+      state.appointmentsLoaded = false;
+      state.authSuccess = '';
+      state.loginModalOpen = false;
+      state.loginReturnTo = '';
+      if (location.hash === returnTo) renderApp(); else location.hash = returnTo;
+    }
     catch (error) { state.authError = error.message || 'We could not sign you in.'; renderApp(); }
   }
 
   async function submitRegister(form) {
     var data = formDataObject(form); state.authError = ''; var submit = form.querySelector('[type="submit"]'); submit.classList.add('loading'); submit.disabled = true; submit.innerHTML = icon('loader', 15) + ' Creating account';
-    try { await api.register({ fullName: data.fullName, age: Number(data.age), email: data.email, password: data.password, location: data.location }); state.authSuccess = 'Account created. Sign in to continue.'; state.authError = ''; location.hash = '#login'; renderApp(); }
+    try {
+      var returnToBooking = route().page === 'register' && route().id === 'appointments' && route().action === 'new';
+      var returnTo = form.id === 'register-modal-form' ? (state.registerReturnTo || '#dashboard') : (returnToBooking ? '#appointments/new' : '#dashboard');
+      var registeredUser = await api.register({ fullName: data.fullName, age: Number(data.age), email: data.email, password: data.password, location: data.location });
+      var loginResponse = await api.login({ email: data.email, password: data.password });
+      saveSession(loginResponse.accessToken, loginResponse.user || registeredUser);
+      state.registrationCredentials = { email: data.email, password: data.password };
+      state.appointmentsLoaded = false;
+      state.authSuccess = '';
+      state.authError = '';
+      state.registerModalOpen = false;
+      state.registerReturnTo = '';
+      if (location.hash === returnTo) renderApp(); else location.hash = returnTo;
+    }
     catch (error) { state.authError = error.message || 'We could not create your account.'; renderApp(); }
   }
 
@@ -430,8 +534,14 @@
     var action = target.dataset.action;
     if (action === 'open-menu') { document.getElementById('sidebar').classList.add('open'); document.body.classList.add('menu-open'); }
     if (action === 'close-menu') { var sidebar = document.getElementById('sidebar'); if (sidebar) sidebar.classList.remove('open'); document.body.classList.remove('menu-open'); }
-    if (action === 'logout') { clearSession(); location.hash = '#login'; renderApp(); }
-    if (action === 'route-new') location.hash = '#appointments/new';
+    if (action === 'close-login-modal') { state.loginModalOpen = false; state.loginReturnTo = ''; state.authError = ''; renderGuestRoute(route()); }
+    if (action === 'close-register-modal') { state.registerModalOpen = false; state.registerReturnTo = ''; state.authError = ''; renderGuestRoute(route()); }
+    if (action === 'close-appointment-prompt') { state.appointmentAuthPromptOpen = false; renderGuestRoute(route()); }
+    if (action === 'open-login-from-prompt') { openLoginModal(state.appointmentReturnTo); }
+    if (action === 'open-register-from-prompt') { openRegisterModal(state.appointmentReturnTo); }
+    if (action === 'close-registration-modal') { state.registrationCredentials = null; renderApp(); }
+    if (action === 'logout') { clearSession(); location.hash = '#home'; renderApp(); }
+    if (action === 'route-new') { if (token) location.hash = '#appointments/new'; else openAppointmentAuthPrompt(); }
     if (action === 'retry') { state.appointmentsLoaded = false; state.appointmentsError = ''; state.detail = null; renderApp(); }
     if (action === 'reset-filters') { state.filters = { search: '', status: 'all', date: '' }; renderApp(); }
     if (action === 'previous-month') { state.month = new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1); renderApp(); }
@@ -442,13 +552,26 @@
   });
 
   document.addEventListener('click', function (event) {
+    var loginLink = event.target.closest('a[href="#login"]');
+    if (loginLink && !token) { event.preventDefault(); openLoginModal('#dashboard'); return; }
+    var registerLink = event.target.closest('a[href="#register"]');
+    if (registerLink && !token && route().page !== 'login') { event.preventDefault(); openRegisterModal('#dashboard'); return; }
+    var authLink = event.target.closest('a[href="#register"]');
+    if (authLink && route().page === 'login' && route().id === 'appointments' && route().action === 'new') { event.preventDefault(); location.hash = '#register/appointments/new'; return; }
     var routeTarget = event.target.closest('[data-route]');
-    if (routeTarget) { var sidebar = document.getElementById('sidebar'); if (sidebar) sidebar.classList.remove('open'); }
+    if (routeTarget) {
+      var sidebar = document.getElementById('sidebar'); if (sidebar) sidebar.classList.remove('open');
+      return;
+    }
+    var appointmentCreateLink = event.target.closest('a[href="#appointments/new"]');
+    if (appointmentCreateLink && !token) { event.preventDefault(); openAppointmentAuthPrompt(); }
   });
 
   document.addEventListener('submit', function (event) {
     if (event.target.id === 'login-form') { event.preventDefault(); submitLogin(event.target); }
+    if (event.target.id === 'login-modal-form') { event.preventDefault(); submitLogin(event.target); }
     if (event.target.id === 'register-form') { event.preventDefault(); submitRegister(event.target); }
+    if (event.target.id === 'register-modal-form') { event.preventDefault(); submitRegister(event.target); }
     if (event.target.id === 'appointment-form') { event.preventDefault(); submitAppointment(event.target); }
     if (event.target.id === 'settings-form') { event.preventDefault(); submitSettings(event.target); }
     if (event.target.id === 'payment-form') { event.preventDefault(); var detailRoute = route(); submitPayment(event.target, detailRoute.id); }
