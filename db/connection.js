@@ -64,7 +64,7 @@ const schema = [
         comment TEXT NOT NULL,
         rating TINYINT UNSIGNED NOT NULL,
         language VARCHAR(32) NOT NULL,
-        needToImprove TEXT NOT NULL DEFAULT 'Everything is good',
+        needToImprove TEXT NOT NULL,
         createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
         updatedAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
         INDEX idx_feedbacks_userId (userId)

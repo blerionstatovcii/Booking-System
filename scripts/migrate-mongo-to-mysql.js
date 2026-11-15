@@ -75,7 +75,8 @@ const migrate = async () => {
                 'INSERT INTO feedbacks (_id, appointmentId, userId, comment, rating, language, needToImprove, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     toId(feedback._id), toId(feedback.appointmentId), toId(feedback.userId),
-                    feedback.comment, feedback.rating, feedback.language, feedback.needToImprove,
+                    feedback.comment, feedback.rating, feedback.language,
+                    feedback.needToImprove || 'Everything is good',
                     feedback.createdAt, feedback.updatedAt
                 ]
             );
