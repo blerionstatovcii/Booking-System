@@ -9,20 +9,25 @@ The project now includes a responsive Bookwise 2.0 frontend served by the same E
 ```bash
 npm install
 copy .env.example .env
+npm run migrate:mongo
 npm start
 ```
 
-Open `http://localhost:3000`. MongoDB must be running locally, or `MONGO_URI` can point to an accessible MongoDB instance.
+Start the **MySQL** module in the XAMPP Control Panel before running these commands. The app creates the `bookingSystem` database and its tables automatically. The migration command copies the existing local MongoDB records into MySQL; keep MongoDB running for that step. Then open `http://localhost:3000`.
 
-Ky është një projekt për menaxhimin e rezervimeve, i ndarë në module të ndryshme si: models, controllers, services, dhe routes.
+For a fresh, empty database, skip `npm run migrate:mongo`. The migration stops if the MySQL tables already contain data.
+
+The default XAMPP MySQL account is `root` with an empty password. If yours is different, update `DB_USER` and `DB_PASSWORD` in `.env`. Replace the example `MY_SECRET` with a long random value. The migration source defaults to `mongodb://127.0.0.1:27017/bookingSystem`; set `MONGO_SOURCE_URI` in `.env` if the MongoDB source is elsewhere.
+
+Ky është një projekt për menaxhimin e rezervimeve me Node.js dhe MySQL/MariaDB (XAMPP).
 
 ## Struktura e projektit
 
 - **controllers/** – Logjika e kontrolluesve për secilën veçori (appointment, feedback, payment, user)
-- **models/** – Modelet e të dhënave për secilën veçori
 - **services/** – Shërbimet që përmbajnë logjikën e biznesit
 - **routes/** – Rrugët për API-të
-- **db/** – Lidhja me bazën e të dhënave
+- **db/** – Lidhja dhe pyetjet për MySQL/MariaDB
+- **scripts/** – Importimi njëherësh i të dhënave nga MongoDB
 - **middleware/** – Middleware për autentikim dhe validim
 
 ## Si të përdorësh projektin

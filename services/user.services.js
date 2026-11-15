@@ -1,56 +1,43 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const User = require("../models/user");
-const BCRYPT_SALT = parseInt(process.env.BCRYPT_SALT) || 10;
+const { pool } = require('../db/connection');
+const { createId, findById, updateById, deleteById } = require('../db/queries');
+const BCRYPT_SALT = parseInt(process.env.BCRYPT_SALT, 10) || 10;
 
-const generateToken = (userId) => {
-    const token = jwt.sign({ id: userId }, process.env.MY_SECRET, { expiresIn: '30d' });
-    return token;
-};
+const generateToken = (userId) => jwt.sign({ id: userId }, process.env.MY_SECRET, { expiresIn: '30d' });
+
 const register = async (fullName, age, email, password, location, Image) => {
-    console.log("Register lookup:", email);
-    const userRegister = await User.findOne({ email: email });
-    console.log("Register lookup complete:", Boolean(userRegister));
-    if (userRegister) {
-        const error = new Error("This User Is Registered");
-        error.code = "USER_EXISTS";
+    const [existingUsers] = await pool.execute('SELECT _id FROM users WHERE email = ? LIMIT 1', [email]);
+    if (existingUsers.length) {
+        const error = new Error('This User Is Registered');
+        error.code = 'USER_EXISTS';
         throw error;
     }
+
     const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT);
-    const newUser = new User({
-        fullName: fullName,
-        age: age,
-        email: email,
-        password: hashedPassword,
-        location: location,
-        Image: Image
-    });
-    await newUser.save();
-    return newUser;
+    const id = createId();
+    await pool.execute(
+        'INSERT INTO users (_id, fullName, age, email, password, location, Image) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, fullName, age, email, hashedPassword, location || null, Image || null]
+    );
+    return findById('users', id);
 };
 
-const findUser = async (userId) => {
-    return await User.findById(userId);
-};
+const findUser = async (userId) => findById('users', userId);
 
-const login = async(email, password)=>{
-    const user = await User.findOne({ email });
-    if (user) {
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (isMatch) {
-            const token = generateToken(user._id);
-            return {
-                user: user,
-                accessToken: token
-            }
-        }
-    }                                                                               
+const login = async (email, password) => {
+    const [users] = await pool.execute('SELECT * FROM users WHERE email = ? LIMIT 1', [email]);
+    const user = users[0];
+    if (user && await bcrypt.compare(password, user.password)) {
+        return { user, accessToken: generateToken(user._id) };
+    }
     return null;
 };
 
 const getAllUsers = async () => {
     try {
-        return await User.find();
+        const [users] = await pool.query('SELECT * FROM users');
+        return users;
     } catch (err) {
         throw new Error('Could not get users: ' + err.message);
     }
@@ -58,9 +45,9 @@ const getAllUsers = async () => {
 
 const getUserById = async (userId) => {
     try {
-        const user = await User.findById(userId);
+        const user = await findById('users', userId);
         if (!user) {
-            throw new Error("User not found");
+            throw new Error('User not found');
         }
         return user;
     } catch (err) {
@@ -70,9 +57,11 @@ const getUserById = async (userId) => {
 
 const updateUser = async (id, updates) => {
     try {
-        const updated = await User.findByIdAndUpdate(id, updates, { new: true });
+        const updated = await updateById('users', id, updates, [
+            'fullName', 'age', 'email', 'password', 'location', 'Image'
+        ]);
         if (!updated) {
-            throw new Error("User    can not be found to update");
+            throw new Error('User can not be found to update');
         }
         return updated;
     } catch (err) {
@@ -82,9 +71,9 @@ const updateUser = async (id, updates) => {
 
 const deleteUser = async (userId) => {
     try {
-        const deleted = await User.findByIdAndDelete(userId);
+        const deleted = await deleteById('users', userId);
         if (!deleted) {
-            throw new Error("User can not be found to delete");
+            throw new Error('User can not be found to delete');
         }
         return deleted;
     } catch (err) {
@@ -92,8 +81,7 @@ const deleteUser = async (userId) => {
     }
 };
 
-
-module.exports ={
+module.exports = {
     register,
     login,
     findUser,

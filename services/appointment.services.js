@@ -1,38 +1,46 @@
 const userService = require('./user.services');
-const Appointment = require('../models/appointment');
+const { pool } = require('../db/connection');
+const { createId, findById, updateById, deleteById } = require('../db/queries');
 
 const create = async (userId, appointment) => {
     const user = await userService.findUser(userId);
     if (!user) {
         throw new Error('User not found');
     }
+
     try {
-        const newAppointment = new Appointment({
-            userId: userId,
-            ...appointment
-        });
-        await newAppointment.save();
-        return newAppointment;
+        const id = createId();
+        await pool.execute(
+            'INSERT INTO appointments (_id, userId, paymentId, Trajtimi, `date`, `time`, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+                id,
+                userId,
+                appointment.paymentId || null,
+                appointment.Trajtimi,
+                appointment.date,
+                appointment.time,
+                appointment.status || 'Scheduled'
+            ]
+        );
+        return findById('appointments', id);
     } catch (err) {
         throw new Error('Could not create appointment: ' + err.message);
     }
 };
 
 const findCurrentAppointments = async (userId) => {
-    const appointment = await Appointment.find({ userId: userId });
-    if (!appointment || appointment.length === 0) {
+    const [appointments] = await pool.execute('SELECT * FROM appointments WHERE userId = ?', [userId]);
+    if (appointments.length === 0) {
         throw new Error('This user does not have Appointments');
     }
-    return appointment;
+    return appointments;
 };
-
-
 
 const getAppointmentById = async (appointmentId) => {
     try {
-        const appointment = await Appointment.findById(appointmentId);
+        const appointment = await findById('appointments', appointmentId);
         if (!appointment) {
-            throw new Error("Appointment not found");
+            throw new Error('Appointment not found');
         }
         return appointment;
     } catch (err) {
@@ -42,9 +50,11 @@ const getAppointmentById = async (appointmentId) => {
 
 const updateAppointment = async (id, updates) => {
     try {
-        const updated = await Appointment.findByIdAndUpdate(id, updates, { new: true });
+        const updated = await updateById('appointments', id, updates, [
+            'userId', 'paymentId', 'Trajtimi', 'date', 'time', 'status'
+        ]);
         if (!updated) {
-            throw new Error("Appointment can not be found to update");
+            throw new Error('Appointment can not be found to update');
         }
         return updated;
     } catch (err) {
@@ -54,9 +64,9 @@ const updateAppointment = async (id, updates) => {
 
 const deleteAppointment = async (appointmentId) => {
     try {
-        const deleted = await Appointment.findByIdAndDelete(appointmentId);
+        const deleted = await deleteById('appointments', appointmentId);
         if (!deleted) {
-            throw new Error("Appointment can not be found to delete");
+            throw new Error('Appointment can not be found to delete');
         }
         return deleted;
     } catch (err) {
@@ -64,5 +74,10 @@ const deleteAppointment = async (appointmentId) => {
     }
 };
 
-module.exports = {create, findCurrentAppointments, getAppointmentById, updateAppointment, deleteAppointment
+module.exports = {
+    create,
+    findCurrentAppointments,
+    getAppointmentById,
+    updateAppointment,
+    deleteAppointment
 };

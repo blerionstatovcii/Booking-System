@@ -6,12 +6,12 @@ const register = async (req, res) =>{
         const { fullName, age, email, password, location, Image} = req.body;
         const user = await userService.register( fullName, age, email, password, location, Image);
         console.log("Register save complete");
-        const safeUser = user.toObject();
+        const safeUser = { ...user };
         delete safeUser.password;
         res.status(201).json(safeUser);
     }
     catch(err){
-        if (err.code === "USER_EXISTS" || err.code === 11000) {
+        if (err.code === "USER_EXISTS" || err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({message:"Ky email është tashmë i regjistruar"});
         }
         console.error("Register error:", err);

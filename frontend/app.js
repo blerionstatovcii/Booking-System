@@ -389,19 +389,6 @@
     app.innerHTML = appShell(r.page === 'settings' ? 'settings' : r.page === 'calendar' ? 'calendar' : r.page === 'appointments' ? 'appointments' : 'dashboard', content);
   }
 
-  function authBrand() { return '<div class="mobile-brand"><span class="brand-mark">' + icon('sparkles', 17) + '</span><span>Bookwise</span></div>'; }
-  function authVisual() { return '<section class="auth-visual"><div class="auth-brand"><span class="brand-mark">' + icon('sparkles', 17) + '</span><span>Bookwise</span></div><div class="auth-copy"><p class="eyebrow">Your time, well managed</p><h1>Make every appointment feel effortless.</h1><p>A calm, focused workspace for keeping your schedule, appointments, and client moments in sync.</p><div class="auth-metrics"><div class="auth-metric"><strong>01</strong><span>One clear view</span></div><div class="auth-metric"><strong>24/7</strong><span>Always in reach</span></div><div class="auth-metric"><strong>Less</strong><span>Admin overhead</span></div></div></div><p class="auth-footer">A focused scheduling space for modern teams.</p></section>'; }
-
-  function renderLogin() {
-    app.innerHTML = '<div class="auth-shell">' + authVisual() + '<section class="auth-form-side"><div class="auth-form">' + authBrand() + '<span class="auth-form-icon">' + icon('shield', 20) + '</span><h2>Welcome back</h2><p class="auth-form-intro">Sign in to pick up where you left off.</p><form id="login-form" class="auth-form-fields"><label class="form-group"><span class="form-label">Email address</span><input class="field" name="email" type="email" autocomplete="email" placeholder="you@company.com" required></label><label class="form-group"><span class="form-label">Password</span><div class="password-wrap"><input class="field" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Show password">' + icon('eye', 15) + '</button></div></label>' + (state.authError ? '<p class="error-message">' + icon('alert', 14) + escapeHtml(state.authError) + '</p>' : '') + (state.authSuccess ? '<p class="success-message">' + icon('check', 14) + escapeHtml(state.authSuccess) + '</p>' : '') + '<button class="button button-primary auth-submit" type="submit">' + icon('arrow', 15) + ' Sign in</button></form><p class="auth-bottom">New to Bookwise? <a class="auth-link" href="#register">Create an account</a></p><p class="auth-note">Your account is secured by the existing Booking System API.</p></div></section></div>';
-  }
-
-  function renderRegister() {
-    var registerReturn = route().id === 'appointments' && route().action === 'new';
-    var signInRoute = registerReturn ? '#login/appointments/new' : '#login';
-    app.innerHTML = '<div class="auth-shell"><section class="auth-visual"><div class="auth-brand"><span class="brand-mark">' + icon('sparkles', 17) + '</span><span>Bookwise</span></div><div class="auth-copy"><p class="eyebrow">A better rhythm</p><h1>Your schedule deserves a little more clarity.</h1><p>Create your workspace and keep your appointments close, organized, and easy to act on.</p></div><p class="auth-footer">Already have an account? <a href="' + signInRoute + '">Sign in</a></p></section><section class="auth-form-side"><div class="auth-form">' + authBrand() + '<a class="back-link" href="' + signInRoute + '">' + icon('arrowLeft', 15) + ' Back to sign in</a><h2>Create your account</h2><p class="auth-form-intro">A few details and your workspace is ready.</p><form id="register-form" class="auth-form-fields"><label class="form-group"><span class="form-label">Full name</span><input class="field" name="fullName" placeholder="Alex Morgan" required></label><div class="form-grid"><label class="form-group"><span class="form-label">Age</span><input class="field" name="age" type="number" min="0" placeholder="28" required></label><label class="form-group"><span class="form-label">Location</span><input class="field" name="location" placeholder="Beirut"></label></div><label class="form-group"><span class="form-label">Email address</span><input class="field" name="email" type="email" placeholder="you@company.com" required></label><label class="form-group"><span class="form-label">Password</span><input class="field" name="password" type="password" minlength="6" placeholder="At least 6 characters" required></label>' + (state.authError ? '<p class="error-message">' + icon('alert', 14) + escapeHtml(state.authError) + '</p>' : '') + '<button class="button button-primary auth-submit" type="submit">' + icon('arrow', 15) + ' Create account</button></form><p class="auth-note">By creating an account, you’ll use the existing Booking System authentication service.</p></div></section></div>';
-  }
-
   function renderGuestRoute(r) {
     var active = r.page === 'calendar' ? 'calendar' : r.page === 'settings' ? 'settings' : r.page === 'appointments' ? 'appointments' : 'dashboard';
     var content = r.page === 'calendar' ? calendarPage() : r.page === 'settings' ? guestSettingsPage() : r.page === 'appointments' ? appointmentsPage() : dashboardPage();
@@ -440,8 +427,8 @@
   function renderApp() {
     var r = route();
     if (!token) {
-      if (r.page === 'login') { renderLogin(); return; }
-      if (r.page === 'register') { renderRegister(); return; }
+      if (r.page === 'login') { openLoginModal(r.id === 'appointments' && r.action === 'new' ? '#appointments/new' : '#dashboard'); return; }
+      if (r.page === 'register') { openRegisterModal(r.id === 'appointments' && r.action === 'new' ? '#appointments/new' : '#dashboard'); return; }
       if (r.page === 'appointments' && r.id === 'new') { openAppointmentAuthPrompt(); return; }
       renderGuestRoute(r);
       return;
