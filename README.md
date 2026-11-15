@@ -19,6 +19,17 @@ For a fresh, empty database, skip `npm run migrate:mongo`. The migration stops i
 
 The default XAMPP MySQL account is `root` with an empty password. If yours is different, update `DB_USER` and `DB_PASSWORD` in `.env`. Replace the example `MY_SECRET` with a long random value. The migration source defaults to `mongodb://127.0.0.1:27017/bookingSystem`; set `MONGO_SOURCE_URI` in `.env` if the MongoDB source is elsewhere.
 
+### Free online preview (Render + TiDB Cloud)
+
+Render offers a free web-service plan, and TiDB Cloud Starter offers a MySQL-compatible free quota. This is for testing, not production: free Render services sleep after 15 minutes without traffic, and TiDB limits free usage to 5 GiB of row storage and 50 million request units per month. TiDB may reject new connections after the quota is reached.
+
+1. Create a **MySQL-compatible TiDB Cloud Starter** instance and configure its public endpoint, password, and IP access list. Use TLS.
+2. In Render, create a Web Service from this GitHub repository, choose branch `main`, a unique service name, and the **Free** plan.
+3. Set the Render environment variables from TiDB's connection details: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`. Also set `DB_SSL=true`, `DB_AUTO_CREATE=false`, `BCRYPT_SALT=10`, and generate a private `MY_SECRET`.
+4. Allow the Render service's outbound IP ranges in TiDB's IP access list. Render shows these in the service's **Connect → Outbound** panel.
+
+The cloud database starts empty. Existing XAMPP records stay on your computer and are not uploaded.
+
 Ky është një projekt për menaxhimin e rezervimeve me Node.js dhe MySQL/MariaDB (XAMPP).
 
 ## Struktura e projektit

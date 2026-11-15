@@ -11,7 +11,8 @@ const connectionOptions = {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     charset: 'utf8mb4',
-    timezone: 'Z'
+    timezone: 'Z',
+    ...(process.env.DB_SSL === 'true' ? { ssl: { minVersion: 'TLSv1.2' } } : {})
 };
 
 const pool = mysql.createPool({
@@ -71,13 +72,15 @@ const schema = [
 ];
 
 const initializeDatabase = async () => {
-    const connection = await mysql.createConnection(connectionOptions);
-    try {
-        await connection.query(
-            `CREATE DATABASE IF NOT EXISTS \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-        );
-    } finally {
-        await connection.end();
+    if (process.env.DB_AUTO_CREATE !== 'false') {
+        const connection = await mysql.createConnection(connectionOptions);
+        try {
+            await connection.query(
+                `CREATE DATABASE IF NOT EXISTS \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+            );
+        } finally {
+            await connection.end();
+        }
     }
 
     for (const statement of schema) {
